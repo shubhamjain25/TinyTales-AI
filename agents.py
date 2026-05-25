@@ -1,5 +1,5 @@
 from config import *
-from schema import AppState, Story, TARGET_WORDS, MAX_REVISIONS
+from schema import AppState, Story, TARGET_WORDS, MAX_REVISIONS, PREVIEW_SENTENCE_LIMIT
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.types import interrupt, Command
 import re
@@ -129,6 +129,16 @@ def formatter_agent(p_state: AppState):
         "status":          "FORMATTED",
     }
 
+def _get_audio_preview(text: str, sentence_limit: int = PREVIEW_SENTENCE_LIMIT) -> str:
+    """
+    Returns the first N sentences for TTS. Full story is shown in the UI.
+    Keeps punctuation-aware splits so Cartesia gets clean, complete sentences.
+    """
+    import re
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    preview   = " ".join(sentences[:sentence_limit])
+    return preview
+
 def tts_agent(p_state: AppState) -> dict:
     """
     Calls Cartesia /tts/bytes with the formatter's output.
@@ -136,15 +146,13 @@ def tts_agent(p_state: AppState) -> dict:
     """
 
     text = p_state.get("formatted_story")
-    tts_text = text[:150] #TO NOT EXHAUST CARTESIA API LIMITS
-    print("="*20)
-    print(f"Text that will be converted to speech: \n{tts_text}\n")
-    print("="*20)
-
     voice_id = p_state.get("voice_id")
 
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     audio_path = AUDIO_DIR / f"v1_{uuid.uuid4()}.wav"
+
+    # ── Only send a short preview to conserve API credits ─────────────────
+    tts_text = _get_audio_preview(text)
 
     client = get_cartesia_client()
 
@@ -168,5 +176,6 @@ def tts_agent(p_state: AppState) -> dict:
 
     return {
         "audio_path": str(audio_path),
+        "audio_preview": tts_text,
         "status":     "AUDIO_GENERATED",
     }

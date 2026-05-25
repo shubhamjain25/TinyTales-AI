@@ -548,13 +548,19 @@ def _render_review(state: dict):
 
 # ── Section 3: audio player ────────────────────────────────────────────────
 def _render_audio(state: dict):
-    title, _   = _resolve_story_fields(state)
-    audio_path = state.get("audio_path", "")
+    title, content = _resolve_story_fields(state)
+    audio_path     = state.get("audio_path", "")
+    audio_preview  = state.get("audio_preview", "")
+    voice_name     = st.session_state.get("voice_name", "")
 
+    # ── Audio card ─────────────────────────────────────────────────────────
     st.markdown(f"""
     <div class="audio-card">
         <div class="audio-eyebrow">✓ &nbsp; Audio Generated</div>
         <div class="audio-title">{title}</div>
+        <div style="font-family:'Fira Mono',monospace;font-size:0.7rem;color:#4a7a55;margin-top:0.2rem;">
+            🎙️ &nbsp; {voice_name}
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -564,16 +570,189 @@ def _render_audio(state: dict):
                 st.audio(f.read(), format="audio/wav")
         except FileNotFoundError:
             st.error(f"Audio file not found at: `{audio_path}`")
-    else:
-        st.error("Audio path missing in state.")
 
-    if audio_path:
-        st.markdown(
-            f'<p class="filepath-hint">🗂  {audio_path}</p>',
-            unsafe_allow_html=True,
-        )
+    # ── API conservation note ──────────────────────────────────────────────
+    st.markdown(f"""
+    <div style="
+        background:#16120a;
+        border:1px solid #3a2e0e;
+        border-left: 3px solid #c9913a;
+        border-radius:8px;
+        padding:0.8rem 1rem;
+        margin:0.8rem 0 1.6rem;
+        display:flex;
+        gap:0.7rem;
+        align-items:flex-start;
+    ">
+        <span style="font-size:0.9rem;flex-shrink:0;margin-top:1px;">⚡</span>
+        <div>
+            <span style="font-family:'Fira Mono',monospace;font-size:0.65rem;
+                         color:#c9913a;letter-spacing:0.1em;text-transform:uppercase;">
+                MVP API Preview Mode
+            </span>
+            <p style="font-family:'Outfit',sans-serif;font-size:0.78rem;
+                      color:#8a7a60;margin-top:0.3rem;line-height:1.6;">
+                To conserve Cartesia API credits, only the opening of the story
+                is converted to audio in this build.
+                The full story is displayed below. In production, the entire
+                story would be synthesised in a single API call.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
+    # ── Full story ─────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="margin-bottom:0.4rem;">
+        <span class="field-label">Full Story</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="story-card" style="margin-top:0;">
+        <div class="card-title" style="font-size:1.4rem;">{title}</div>
+        <div class="card-body">{content}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── What's next ────────────────────────────────────────────────────────
     st.markdown('<hr class="soft-divider">', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="text-align:center;margin-bottom:1.8rem;">
+        <span class="field-label" style="font-size:0.62rem;">Where this goes next</span>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;
+                    color:#e8e3dc;margin-top:0.3rem;font-weight:600;">
+            Roadmap &amp; Extensions
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    features = [
+        {
+            "icon":  "🌍",
+            "title": "Multi-Regional Voices",
+            "desc":  "Generate stories in authentic regional accents and speaking styles — from Indian English and Hindi to American, British, and beyond.",
+            "tag":   "Ready to build",
+            "tag_color": "#1a3a1a",
+            "tag_border": "#2d5a2d",
+            "tag_text": "#5ab06a",
+        },
+        {
+            "icon":  "🎭",
+            "title": "Multi-Character Voices",
+            "desc":  "Assign a distinct Cartesia voice to each story character. Dialogue becomes a full cast performance.",
+            "tag":   "Ready to build",
+            "tag_color": "#1a3a1a",
+            "tag_border": "#2d5a2d",
+            "tag_text": "#5ab06a",
+        },
+        {
+            "icon":  "🌍",
+            "title": "Multilingual Narration",
+            "desc":  "Generate the story in any of Cartesia's 15+ supported languages. One topic, global reach.",
+            "tag":   "Ready to build",
+            "tag_color": "#1a3a1a",
+            "tag_border": "#2d5a2d",
+            "tag_text": "#5ab06a",
+        },
+        {
+            "icon":  "🎵",
+            "title": "Ambient Soundscapes",
+            "desc":  "Layer AI-generated background audio — rain, forest, city — matched to the story's setting and tone.",
+            "tag":   "Near-term",
+            "tag_color": "#1a1a2a",
+            "tag_border": "#2d2d4a",
+            "tag_text": "#7070c0",
+        },
+        {
+            "icon":  "📻",
+            "title": "Episodic Series",
+            "desc":  "Persist characters and world-state across episodes. Build an ongoing serialised audio story with continuity.",
+            "tag":   "Near-term",
+            "tag_color": "#1a1a2a",
+            "tag_border": "#2d2d4a",
+            "tag_text": "#7070c0",
+        },
+        {
+            "icon":  "🎚️",
+            "title": "Emotion & Pacing Control",
+            "desc":  "Annotate story sections with emotional cues — suspense, warmth, urgency — and have Cartesia modulate delivery.",
+            "tag":   "Near-term",
+            "tag_color": "#1a1a2a",
+            "tag_border": "#2d2d4a",
+            "tag_text": "#7070c0",
+        },
+        {
+            "icon":  "⚡",
+            "title": "Streaming Playback",
+            "desc":  "Switch from the bytes endpoint to Cartesia WebSocket streaming. Audio starts playing before generation completes.",
+            "tag":   "Architecture upgrade",
+            "tag_color": "#1e1410",
+            "tag_border": "#4a3010",
+            "tag_text": "#c9913a",
+        },
+        {
+            "icon":  "🔌",
+            "title": "Developer API",
+            "desc":  "Expose the story generation + TTS pipeline as a REST API. Let third-party apps request audio stories programmatically.",
+            "tag":   "Architecture upgrade",
+            "tag_color": "#1e1410",
+            "tag_border": "#4a3010",
+            "tag_text": "#c9913a",
+        },
+        {
+            "icon":  "📱",
+            "title": "Mobile App",
+            "desc":  "A native iOS/Android experience with offline playback, push notifications for generated stories, and a personal library.",
+            "tag":   "Future",
+            "tag_color": "#1a1218",
+            "tag_border": "#3a2a38",
+            "tag_text": "#9a6a98",
+        },
+    ]
+
+    # Render 3-column feature grid
+    for row_start in range(0, len(features), 3):
+        cols = st.columns(3, gap="small")
+        for col, feat in zip(cols, features[row_start:row_start + 3]):
+            with col:
+                st.markdown(f"""
+                <div style="
+                    background:#111118;
+                    border:1px solid #1e1e2c;
+                    border-radius:12px;
+                    padding:1.2rem;
+                    height:100%;
+                    margin-bottom:0.6rem;
+                    transition:border-color 0.2s;
+                ">
+                    <div style="font-size:1.4rem;margin-bottom:0.7rem;">{feat['icon']}</div>
+                    <div style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;
+                                font-weight:600;color:#e8e3dc;margin-bottom:0.5rem;
+                                line-height:1.2;">
+                        {feat['title']}
+                    </div>
+                    <div style="font-size:0.75rem;color:#6a6678;line-height:1.7;
+                                margin-bottom:0.9rem;font-family:'Outfit',sans-serif;">
+                        {feat['desc']}
+                    </div>
+                    <span style="
+                        font-family:'Fira Mono',monospace;
+                        font-size:0.6rem;
+                        letter-spacing:0.08em;
+                        background:{feat['tag_color']};
+                        border:1px solid {feat['tag_border']};
+                        color:{feat['tag_text']};
+                        padding:0.15rem 0.55rem;
+                        border-radius:4px;
+                    ">{feat['tag']}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # ── New story CTA ──────────────────────────────────────────────────────
+    st.markdown('<hr class="soft-divider">', unsafe_allow_html=True)
+    st.markdown(f'<p class="filepath-hint" style="margin-bottom:1.2rem;">🗂  {audio_path}</p>',
+                unsafe_allow_html=True)
 
     _, mid, _ = st.columns([1, 1.2, 1])
     with mid:
@@ -582,7 +761,6 @@ def _render_audio(state: dict):
             st.session_state.graph_state  = None
             st.session_state.show_feedback = False
             st.rerun()
-
 
 # ── Unexpected mid-flight states ────────────────────────────────────────────
 def _render_processing(status: str):

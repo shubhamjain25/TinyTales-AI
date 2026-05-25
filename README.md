@@ -100,7 +100,7 @@ Edit `config.py` to customize:
 - `python-dotenv` - Environment variable management
 - `streamlit` - Web UI framework
 
-## Workflow
+## Workflow & Architecture
 
 The application uses LangGraph to orchestrate the following workflow:
 
@@ -110,6 +110,32 @@ The application uses LangGraph to orchestrate the following workflow:
 4. **TTS Agent**: Generates audio using Cartesia
 5. **Router**: Determines if revision is needed based on user feedback
 
+### Graph Architecture
+
+```mermaid
+graph TD
+    Start([Start]) --> Input[Input Agent<br/>Validate Query]
+    Input --> Generate[Generator Agent<br/>Create Story]
+    Generate --> Interrupt1{"HITL Interrupt<br/>Review Story"}
+    Interrupt1 -->|Approved| Format[Formatter Agent<br/>Format for Audio]
+    Interrupt1 -->|Needs Revision| Router{"Revision<br/>Count < 3?"}
+    Router -->|Yes| Feedback[Add Feedback<br/>to History]
+    Feedback --> Generate
+    Router -->|No| End1([End: Max Revisions])
+    Format --> TTS[TTS Agent<br/>Generate Audio]
+    TTS --> Interrupt2{"HITL Interrupt<br/>Review Audio"}
+    Interrupt2 -->|Accept| Success([End: Success])
+    Interrupt2 -->|Regenerate| TTS
+    
+    style Input fill:#e1f5ff
+    style Generate fill:#fff3e0
+    style Format fill:#f3e5f5
+    style TTS fill:#e8f5e9
+    style Interrupt1 fill:#fce4ec
+    style Interrupt2 fill:#fce4ec
+    style Router fill:#fff9c4
+```
+
 ### Human-In-The-Loop (HITL)
 
 The workflow incorporates HITL capabilities through LangGraph's `interrupt()` function, allowing users to:
@@ -117,6 +143,39 @@ The workflow incorporates HITL capabilities through LangGraph's `interrupt()` fu
 - Provide detailed feedback for story refinement
 - Approve stories or request revisions (up to 3 iterations)
 - Resume sessions with persistent state management
+
+## Testing & Monitoring with LangSmith
+
+[LangSmith](https://smith.langchain.com/) provides detailed analysis and monitoring of your LangGraph workflow:
+
+### Setup LangSmith
+
+1. Create a LangSmith account at [smith.langchain.com](https://smith.langchain.com/)
+2. Get your API key from the settings
+3. Add to `.env`:
+   ```env
+   LANGCHAIN_TRACING_V2=true
+   LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+   LANGCHAIN_API_KEY=your_langsmith_api_key_here
+   LANGCHAIN_PROJECT=TinyTales-AI
+   ```
+
+### LangSmith Features
+
+- **Run Traces**: View complete execution traces for each story generation
+- **Token Usage**: Monitor LLM token consumption and costs
+- **Latency Analysis**: Identify performance bottlenecks in the workflow
+- **Feedback Collection**: Track user feedback and iteration patterns
+- **Debugging**: Inspect state transitions and agent decisions
+- **Analytics**: Compare performance across different story topics and voices
+
+### Accessing Traces
+
+Once enabled, navigate to [smith.langchain.com](https://smith.langchain.com/) to:
+- View real-time execution traces
+- Inspect intermediate states and messages
+- Analyze LLM prompts and responses
+- Track story generation quality metrics
 
 ## API Keys Required
 

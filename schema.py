@@ -9,6 +9,8 @@ import operator
 MAX_REVISIONS = 3
 GROQ_MODEL = "llama-3.3-70b-versatile"
 TARGET_WORDS = 300  # ~120s at avg reading/speaking pace
+PREVIEW_SENTENCE_LIMIT = 3   # ~15-20s of audio, conserves API credits
+
 ###########################################
 
 class Story(BaseModel):
@@ -31,5 +33,6 @@ class AppState(TypedDict):
     feedback: Annotated[list[str], operator.add]
     story: Optional[Story]
     formatted_story: str
-    audio_path:      Optional[str]
+    audio_path: Optional[str]
+    audio_preview: str
     voice_id: str
