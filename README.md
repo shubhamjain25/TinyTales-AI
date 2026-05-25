@@ -114,34 +114,84 @@ The application uses LangGraph to orchestrate the following workflow:
 
 ```mermaid
 graph TD
-    Start([Start]) --> Input[Input Agent<br/>Validate Query]
-    Input --> Generate[Generator Agent<br/>Create Story]
-    Generate --> Interrupt1{"HITL Interrupt<br/>Review Story"}
-    Interrupt1 -->|Approved| Format[Formatter Agent<br/>Format for Audio]
-    Interrupt1 -->|Needs Revision| Router{"Revision<br/>Count < 3?"}
-    Router -->|Yes| Feedback[Add Feedback<br/>to History]
-    Feedback --> Generate
-    Router -->|No| End1([End: Max Revisions])
-    Format --> TTS[TTS Agent<br/>Generate Audio]
-    TTS --> Interrupt2{"HITL Interrupt<br/>Review Audio"}
-    Interrupt2 -->|Accept| Success([End: Success])
-    Interrupt2 -->|Regenerate| TTS
-    
-    style Input fill:#e1f5ff
-    style Generate fill:#fff3e0
-    style Format fill:#f3e5f5
-    style TTS fill:#e8f5e9
-    style Interrupt1 fill:#fce4ec
-    style Interrupt2 fill:#fce4ec
-    style Router fill:#fff9c4
+    %% =========================
+    %% Workflow
+    %% =========================
+
+    Start([Start]) --> Input
+
+    Input[Input Agent<br/>Parse Query<br/>Status:PARSED]
+
+    Input --> Generate
+
+    Generate[Generator Agent<br/>Create Story Draft<br/>Status:GENERATED]
+
+    Generate --> Review
+
+    Review{HITL Review<br/>Story Evaluation}
+
+    Review -->|Approved| Approved
+
+    Review -->|Needs Revision| Feedback
+
+    Feedback[Feedback Agent<br/>Collect Feedback<br/>Status: NEEDS_REVISION]
+
+    Feedback --> RevisionCheck
+
+    RevisionCheck{revision_count<br/>is less than MAX_REVISION_COUNT}
+
+    RevisionCheck -->|Yes| Generate
+
+    RevisionCheck -->|No| MaxRevision[Max Revisions Reached<br/>Fallback / Force Approval]
+
+    Approved[Approved Story<br/>Status: APPROVED]
+
+    Approved --> Format
+
+    MaxRevision --> Format
+
+    Format[Formatter Agent<br/>Prepare TTS Format<br/>Status: FORMATTED]
+
+    Format --> TTS
+
+    TTS[TTS Agent<br/>Generate Audio<br/>Status: AUDIO_GENERATED]
+
+    TTS --> End([End: Success])
+
+    %% =========================
+    %% Config Dependency
+    %% =========================
+
+    Config[(MAX_REVISION_COUNT)]
+
+    Config -. Controls .-> RevisionCheck
+
+    %% =========================
+    %% Styling
+    %% =========================
+
+    classDef inputStage fill:#e3f2fd,stroke:#1e88e5,color:#0d47a1,stroke-width:2px;
+    classDef generationStage fill:#fff3e0,stroke:#fb8c00,color:#e65100,stroke-width:2px;
+    classDef reviewStage fill:#fce4ec,stroke:#d81b60,color:#880e4f,stroke-width:2px;
+    classDef formattingStage fill:#f3e5f5,stroke:#8e24aa,color:#4a148c,stroke-width:2px;
+    classDef audioStage fill:#e8f5e9,stroke:#43a047,color:#1b5e20,stroke-width:2px;
+    classDef configStage fill:#eeeeee,stroke:#616161,color:#212121,stroke-dasharray: 5 5;
+
+    class Input inputStage;
+    class Generate generationStage;
+    class Review,Feedback,RevisionCheck,Approved,MaxRevision reviewStage;
+    class Format formattingStage;
+    class TTS audioStage;
+    class Config configStage;
 ```
 
 ### Human-In-The-Loop (HITL)
 
-The workflow incorporates HITL capabilities through LangGraph's `interrupt()` function, allowing users to:
+The workflow incorporates HITL capabilities through LangGraph's conditional routing, allowing users to:
 - Review generated stories before audio conversion
-- Provide detailed feedback for story refinement
-- Approve stories or request revisions (up to 3 iterations)
+- Approve stories to proceed to audio generation
+- Provide feedback and request revisions (up to `MAX_REVISIONS` iterations)
+- Auto-approval: When revision count reaches `MAX_REVISIONS`, the story automatically proceeds to formatting and audio generation rather than looping indefinitely
 - Resume sessions with persistent state management
 
 ## Testing & Monitoring with LangSmith
