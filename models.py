@@ -14,7 +14,6 @@ def get_creative_llm():
 
 def get_cartesia_client() -> Cartesia:
     api_key = os.environ.get("CARTESIA_API_KEY")
-    print(f"API Key: {api_key}")
     if not api_key:
         raise ValueError("CARTESIA_API_KEY is not set in environment.")
     return Cartesia(api_key=api_key)
