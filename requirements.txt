@@ -1,9 +1,7 @@
-groq>=0.31.0
-langchain>=0.3.27
-langchain-core>=0.3.72
-langchain-groq>=0.3.7
-langgraph>=0.6.3
-langsmith>=0.1.0
-pydantic>=2.11.7
-python-dotenv>=1.1.1
-streamlit>=1.28.0
+cartesia==3.1.0
+langchain_core==1.4.0
+langchain_groq==1.1.2
+langgraph==1.2.1
+pydantic==2.13.4
+python-dotenv==1.2.2
+streamlit==1.57.0
